@@ -1,0 +1,16 @@
+[package]
+name = "cv-video"
+description = "cv::video for opencv-no-c: optical flow, background subtraction, tracking and Kalman filtering."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.77"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-imgproc.workspace = true

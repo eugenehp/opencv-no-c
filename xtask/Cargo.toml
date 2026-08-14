@@ -1,0 +1,9 @@
+[package]
+name = "xtask"
+description = "Parity tooling: extracts the upstream API surface and reports coverage."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+license.workspace = true
+authors.workspace = true

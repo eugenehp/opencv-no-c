@@ -1,0 +1,50 @@
+[package]
+name = "opencv-no-c"
+description = "Facade re-exporting the pure-Rust OpenCV module ports."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-calib3d.workspace = true
+cv-photo.workspace = true
+cv-flann.workspace = true
+cv-ml.workspace = true
+cv-objdetect.workspace = true
+cv-stitching.workspace = true
+cv-dnn.workspace = true
+cv-highgui.workspace = true
+cv-video.workspace = true
+cv-videoio.workspace = true
+cv-features2d.workspace = true
+cv-gapi.workspace = true
+cv-imgcodecs.workspace = true
+cv-imgproc.workspace = true
+
+[features]
+default = []
+# Forwarded to cv-imgproc; see the cv-accel docs for the C-linkage trade-off.
+# Upstream's names, with errors unwinding instead of being returned.
+dropin  = []
+# A C-callable surface over `dropin`. Exporting a C ABI from Rust links no C —
+# it is a calling convention, not a dependency.
+abi     = ["dropin"]
+compat  = ["cv-core/compat"]
+gui     = ["cv-highgui/gui"]
+rlx     = ["cv-imgproc/rlx", "cv-dnn/rlx", "cv-gapi/rlx"]
+rlx-all = ["cv-imgproc/rlx-all", "cv-dnn/rlx", "cv-gapi/rlx"]
+
+[lib]
+# `staticlib` and `cdylib` so the `abi` feature produces something a C or C++
+# caller can actually link against.
+crate-type = ["rlib", "staticlib", "cdylib"]
+
+[lints]
+workspace = true

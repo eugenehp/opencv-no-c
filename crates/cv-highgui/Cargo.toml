@@ -1,0 +1,29 @@
+[package]
+name = "cv-highgui"
+description = "cv::highgui for opencv-no-c: windows, keys, trackbars and ROI selection, on egui."
+version.workspace = true
+edition.workspace = true
+# eframe's dependency tree needs a newer toolchain than the pure crates.
+rust-version = "1.85"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-imgproc.workspace = true
+eframe = { version = "0.32", optional = true, default-features = false, features = ["glow", "default_fonts"] }
+egui = { version = "0.32", optional = true, default-features = false }
+
+[features]
+default = []
+# Open real windows. Without it the API compiles and reports that no backend
+# was built in, so downstream code does not need cfg blocks.
+gui = ["dep:eframe", "dep:egui"]
+
+[[example]]
+name = "demo"
+required-features = ["gui"]

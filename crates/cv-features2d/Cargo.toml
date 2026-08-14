@@ -1,0 +1,24 @@
+[package]
+name = "cv-features2d"
+description = "cv::features2d for opencv-no-c: FAST/ORB/BRIEF keypoints, descriptors and matching."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.77"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-flann.workspace = true
+cv-imgproc.workspace = true
+cv-accel = { workspace = true, optional = true }
+
+[features]
+default = []
+# Route the L2 distance matrix through RLX (cv_accel::matmul_f32), which can
+# then run on CPU/Metal/CUDA/Vulkan depending on cv-accel backend features.
+rlx = ["dep:cv-accel", "cv-accel/rlx"]

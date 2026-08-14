@@ -1,0 +1,19 @@
+[package]
+name = "cv-imgcodecs"
+description = "Pure-Rust port of the OpenCV `imgcodecs` module: image file I/O."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-imgproc.workspace = true
+
+[lints]
+workspace = true

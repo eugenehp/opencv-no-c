@@ -1,0 +1,44 @@
+[package]
+name = "cv-imgproc"
+description = "Pure-Rust port of the OpenCV `imgproc` module."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-accel = { workspace = true, optional = true }
+
+[features]
+default = []
+# Route heavy kernels through RLX. See `cv-accel` for the C-linkage trade-off
+# this implies; the default build stays pure Rust.
+rlx = ["dep:cv-accel", "cv-accel/rlx"]
+
+# Per-backend passthroughs. Each implies `rlx`.
+rlx-metal  = ["rlx", "cv-accel/rlx-metal"]
+rlx-mlx    = ["rlx", "cv-accel/rlx-mlx"]
+rlx-coreml = ["rlx", "cv-accel/rlx-coreml"]
+rlx-gpu    = ["rlx", "cv-accel/rlx-gpu"]
+rlx-vulkan = ["rlx", "cv-accel/rlx-vulkan"]
+rlx-cuda   = ["rlx", "cv-accel/rlx-cuda"]
+rlx-rocm   = ["rlx", "cv-accel/rlx-rocm"]
+rlx-oneapi = ["rlx", "cv-accel/rlx-oneapi"]
+rlx-tpu     = ["rlx", "cv-accel/rlx-tpu"]
+rlx-xdna    = ["rlx", "cv-accel/rlx-xdna"]
+rlx-opengl  = ["rlx", "cv-accel/rlx-opengl"]
+rlx-directx = ["rlx", "cv-accel/rlx-directx"]
+rlx-webgpu  = ["rlx", "cv-accel/rlx-webgpu"]
+rlx-hexagon = ["rlx", "cv-accel/rlx-hexagon"]
+rlx-all     = ["rlx", "cv-accel/rlx-all"]
+
+[lints]
+workspace = true
+
+[dev-dependencies]

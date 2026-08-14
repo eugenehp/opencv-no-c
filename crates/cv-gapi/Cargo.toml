@@ -1,0 +1,24 @@
+[package]
+name = "cv-gapi"
+description = "cv::gapi for opencv-no-c: a deferred image-processing graph, compiled once and applied many times."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.77"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-imgproc.workspace = true
+cv-accel = { workspace = true, optional = true }
+
+[features]
+default = []
+# Offload the convolution kernel to RLX.
+rlx = ["dep:cv-accel", "cv-accel/rlx"]
+rlx-metal = ["rlx", "cv-accel/rlx-metal"]
+rlx-cuda = ["rlx", "cv-accel/rlx-cuda"]

@@ -1,0 +1,90 @@
+[package]
+name = "cv-accel"
+description = "Optional RLX-backed acceleration for opencv-no-c. Isolates the only dependency that links C."
+version.workspace = true
+edition.workspace = true
+# RLX is edition 2024, so this crate needs a newer toolchain than the rest of
+# the workspace. It is optional precisely so the pure-Rust crates keep their
+# lower floor.
+rust-version = "1.85"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+rlx = { path = "../../../rlx/crates/rlx", features = ["cpu"], optional = true, default-features = false }
+# The `rlx` facade does not forward every backend feature its runtime defines
+# (xdna, opengl, directx, webgpu, qnn). Depending on the runtime directly lets
+# those be switched on; Cargo unifies features across the shared instance, so
+# the facade picks them up.
+rlx-runtime = { path = "../../../rlx/crates/core/rlx-runtime", optional = true, default-features = false }
+# ONNX import: lowers a .onnx file to RLX HIR, which `Graph::from_hir` turns
+# into the same compiled graph any other RLX model uses. Optional because it
+# pulls in a protobuf parser that the conv/matmul entry points do not need.
+rlx-onnx-import = { path = "../../../rlx/crates/io/rlx-onnx-import", optional = true, default-features = false }
+rlx-ir = { path = "../../../rlx/crates/core/rlx-ir", optional = true, default-features = false }
+
+[features]
+default = []
+
+# Base backend: RLX on the CPU. On Apple platforms this links the Accelerate
+# framework; see the crate docs for what that means for the no-C guarantee.
+rlx = ["dep:rlx"]
+
+# Read `.onnx` files. Implies `rlx`, since the result is an RLX graph.
+onnx = ["rlx", "dep:rlx-onnx-import", "dep:rlx-ir"]
+
+# ── Per-backend features ────────────────────────────────────────
+# Each compiles on any host — RLX loads drivers lazily — so a backend that has
+# no hardware simply never reports as available at runtime.
+rlx-metal  = ["rlx", "rlx/metal"]    # Apple Metal (MPS + custom MSL)
+rlx-mlx    = ["rlx", "rlx/mlx"]      # Apple MLX
+rlx-coreml = ["rlx", "rlx/coreml"]   # Apple Neural Engine
+rlx-gpu    = ["rlx", "rlx/gpu"]      # wgpu: Metal/Vulkan/DX12/WebGPU
+rlx-vulkan = ["rlx", "rlx/vulkan"]   # native Vulkan
+rlx-cuda   = ["rlx", "rlx/cuda"]     # NVIDIA
+rlx-rocm   = ["rlx", "rlx/rocm"]     # AMD
+rlx-oneapi = ["rlx", "rlx/oneapi"]   # Intel Level Zero
+rlx-tpu    = ["rlx", "rlx/tpu"]      # Google TPU via PJRT
+
+# Backends the `rlx` facade does not expose, reached through rlx-runtime.
+rlx-xdna    = ["rlx", "dep:rlx-runtime", "rlx-runtime/xdna"]     # AMD Ryzen AI NPU
+rlx-opengl  = ["rlx", "dep:rlx-runtime", "rlx-runtime/opengl"]   # WebGL/OpenGL compute
+rlx-directx = ["rlx", "dep:rlx-runtime", "rlx-runtime/directx"]  # DirectX 12 (Windows)
+rlx-webgpu  = ["rlx", "rlx/gpu", "dep:rlx-runtime", "rlx-runtime/webgpu"]
+
+# Qualcomm Hexagon. Deliberately NOT in `rlx-all`: rlx-qnn's build script
+# compiles a C shim and hard-fails unless QNN_SDK_ROOT points at the Qualcomm
+# AI Engine Direct SDK, so enabling it by default would break the build for
+# everyone without that SDK installed.
+rlx-hexagon = ["rlx", "dep:rlx-runtime", "rlx-runtime/qnn"]
+
+# Everything at once. Backends without hardware are compiled but never
+# selected, so this is safe to enable anywhere.
+rlx-all = [
+    "rlx",
+    "rlx-metal",
+    "rlx-mlx",
+    "rlx-coreml",
+    "rlx-gpu",
+    "rlx-vulkan",
+    "rlx-cuda",
+    "rlx-rocm",
+    "rlx-oneapi",
+    "rlx-tpu",
+    "rlx-xdna",
+    "rlx-opengl",
+    "rlx-directx",
+    "rlx-webgpu",
+    # `rlx-hexagon` is excluded on purpose — see its comment above.
+]
+
+[dev-dependencies]
+cv-core.workspace = true
+
+[lints]
+workspace = true

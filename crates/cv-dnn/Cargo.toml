@@ -1,0 +1,32 @@
+[package]
+name = "cv-dnn"
+description = "cv::dnn for opencv-no-c: blob conversion, NMS and a layer graph executed on RLX."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.77"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-imgproc.workspace = true
+cv-accel = { workspace = true, optional = true }
+
+[features]
+default = []
+# Execute Convolution and InnerProduct on RLX instead of the portable path.
+rlx = ["dep:cv-accel", "cv-accel/rlx"]
+# `Net::from_onnx` — read a .onnx file through RLX's importer.
+onnx = ["rlx", "cv-accel/onnx"]
+rlx-metal = ["rlx", "cv-accel/rlx-metal"]
+rlx-coreml = ["rlx", "cv-accel/rlx-coreml"]
+rlx-cuda = ["rlx", "cv-accel/rlx-cuda"]
+rlx-gpu = ["rlx", "cv-accel/rlx-gpu"]
+
+[[example]]
+name = "onnx_check"
+required-features = ["onnx"]

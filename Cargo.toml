@@ -1,0 +1,71 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/cv-accel",
+    "crates/cv-calib3d",
+    "crates/cv-photo",
+    "crates/cv-flann",
+    "crates/cv-ml",
+    "crates/cv-objdetect",
+    "crates/cv-stitching",
+    "crates/cv-core",
+    "crates/cv-highgui",
+    "crates/cv-video",
+    "crates/cv-videoio",
+    "crates/cv-dnn",
+    "crates/cv-features2d",
+    "crates/cv-gapi",
+    "crates/cv-imgcodecs",
+    "crates/cv-imgproc",
+    "crates/cv-samples",
+    "crates/opencv-no-c",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+# 1.77 for f64::round_ties_even, which cvRound depends on for bit-exact parity.
+rust-version = "1.77"
+license = "Apache-2.0"
+repository = "https://github.com/eugenehp/opencv-no-c"
+# Tracks the upstream OpenCV tree this port targets for parity.
+# Upstream: opencv 4.15.0-dev @ 77dfa297d08fdecdc509fc01ad92a2e9ec776a57
+authors = ["opencv-no-c contributors"]
+keywords = ["opencv", "computer-vision", "image-processing", "pure-rust", "wasm"]
+categories = ["computer-vision", "multimedia::images", "algorithms", "science"]
+readme = "README.md"
+
+[workspace.dependencies]
+cv-accel = { path = "crates/cv-accel", version = "0.1.0" }
+cv-core = { path = "crates/cv-core", version = "0.1.0" }
+cv-highgui = { path = "crates/cv-highgui", version = "0.1.0" }
+cv-video = { path = "crates/cv-video", version = "0.1.0" }
+cv-videoio = { path = "crates/cv-videoio", version = "0.1.0" }
+cv-stitching = { path = "crates/cv-stitching", version = "0.1.0" }
+cv-objdetect = { path = "crates/cv-objdetect", version = "0.1.0" }
+cv-ml = { path = "crates/cv-ml", version = "0.1.0" }
+cv-flann = { path = "crates/cv-flann", version = "0.1.0" }
+cv-photo = { path = "crates/cv-photo", version = "0.1.0" }
+cv-calib3d = { path = "crates/cv-calib3d", version = "0.1.0" }
+cv-dnn = { path = "crates/cv-dnn", version = "0.1.0" }
+cv-features2d = { path = "crates/cv-features2d", version = "0.1.0" }
+cv-gapi = { path = "crates/cv-gapi", version = "0.1.0" }
+cv-imgcodecs = { path = "crates/cv-imgcodecs", version = "0.1.0" }
+cv-imgproc = { path = "crates/cv-imgproc", version = "0.1.0" }
+cv-samples = { path = "crates/cv-samples", version = "0.1.0" }
+
+[workspace.lints.rust]
+missing_debug_implementations = "warn"
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+undocumented_unsafe_blocks = "warn"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+
+[profile.bench]
+inherits = "release"

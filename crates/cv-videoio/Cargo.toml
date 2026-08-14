@@ -1,0 +1,17 @@
+[package]
+name = "cv-videoio"
+description = "cv::videoio for opencv-no-c: AVI, Y4M and image-sequence capture and writing."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.77"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-imgcodecs.workspace = true
+cv-imgproc.workspace = true

@@ -1,0 +1,18 @@
+[package]
+name = "cv-stitching"
+description = "cv::stitching for opencv-no-c: warpers, blenders and a panorama pipeline."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.77"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true
+cv-imgproc.workspace = true
+cv-calib3d.workspace = true
+cv-features2d.workspace = true

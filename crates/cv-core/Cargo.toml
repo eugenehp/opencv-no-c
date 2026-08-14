@@ -1,0 +1,24 @@
+[package]
+name = "cv-core"
+description = "Pure-Rust port of the OpenCV `core` module: type system, Mat, arithmetic, statistics."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[features]
+default = ["std"]
+std = []
+# `cv::Mat`'s refcounted sharing semantics, as an additional type. Purely
+# additive: nothing outside `compat` changes behaviour when it is on.
+compat = ["std"]
+
+[lints]
+workspace = true
+
+[dev-dependencies]

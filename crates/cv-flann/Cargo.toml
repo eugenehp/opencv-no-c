@@ -1,0 +1,15 @@
+[package]
+name = "cv-flann"
+description = "cv::flann for opencv-no-c: KD-tree, LSH and linear nearest-neighbour indices."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.77"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[dependencies]
+cv-core.workspace = true

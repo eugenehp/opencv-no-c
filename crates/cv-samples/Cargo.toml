@@ -1,0 +1,32 @@
+[package]
+name = "cv-samples"
+description = "The OpenCV sample programs, ported to opencv-no-c and runnable under wasm32."
+version.workspace = true
+edition.workspace = true
+rust-version = "1.77"
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[lib]
+# `cdylib` so the whole set links as a WebAssembly module; `rlib` so the
+# native runner and the golden test can link it directly.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cv-core.workspace = true
+cv-imgproc.workspace = true
+cv-imgcodecs.workspace = true
+cv-features2d.workspace = true
+cv-calib3d.workspace = true
+cv-photo.workspace = true
+cv-video.workspace = true
+cv-objdetect.workspace = true
+cv-stitching.workspace = true
+cv-ml.workspace = true
+
+[lints]
+workspace = true
