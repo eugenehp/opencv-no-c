@@ -36,14 +36,32 @@ pub fn svd_decomp<S: MatLike + ?Sized>(src: &S) -> Result<SvdResult> {
     let (m, n) = (src.rows() as usize, src.cols() as usize);
     cv_assert!(m > 0 && n > 0, "SVDecomp requires a non-empty matrix");
     cv_assert!(src.channels() == 1, "SVDecomp requires a single-channel matrix");
+    let mut a = vec![0.0f64; m * n];
+    for i in 0..m {
+        for j in 0..n {
+            a[i * n + j] = src.at_f64(i as i32, j as i32, 0)?;
+        }
+    }
+    let k = m.min(n);
+    let (w, u, vt) = jacobi_svd_dense(&a, m, n);
+    Ok(SvdResult { u: mat_from(&u, m, k)?, w: mat_from(&w, k, 1)?, vt: mat_from(&vt, k, n)? })
+}
 
+/// One-sided Jacobi SVD over a row-major slice — the shared core.
+///
+/// Returns `(w, u, vt)` with `w` descending, `u` as `m x k` and `vt` as `k x n`,
+/// `k = min(m, n)`. Slices in and out, so the callers that never build a `Mat`
+/// — `cv::invert(DECOMP_SVD)` and `cv::solve(DECOMP_SVD)` in
+/// [`crate::matmul`] — share it with [`svd_decomp`] instead of keeping a
+/// second, less accurate implementation of their own.
+pub(crate) fn jacobi_svd_dense(src: &[f64], m: usize, n: usize) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
     // Work on the tall orientation; the thin case is recovered by transposing.
     let transposed = m < n;
     let (rows, cols) = if transposed { (n, m) } else { (m, n) };
     let mut a = vec![0.0f64; rows * cols];
     for i in 0..m {
         for j in 0..n {
-            let v = src.at_f64(i as i32, j as i32, 0)?;
+            let v = src[i * n + j];
             if transposed {
                 a[j * cols + i] = v;
             } else {
@@ -128,26 +146,26 @@ pub fn svd_decomp<S: MatLike + ?Sized>(src: &S) -> Result<SvdResult> {
     }
 
     // Undo the transpose: A' = V W U' means U and Vt swap roles.
-    let (uu, vv) = if transposed {
-        (transpose_of(&vt, k, cols), transpose_of(&u, rows, k))
+    if transposed {
+        (w, transpose_slice(&vt, k, cols), transpose_slice(&u, rows, k))
     } else {
-        (mat_from(&u, rows, k)?, mat_from(&vt, k, cols)?)
-    };
-    Ok(SvdResult { u: uu, w: mat_from(&w, k, 1)?, vt: vv })
+        (w, u, vt)
+    }
 }
 
-fn mat_from(d: &[f64], r: usize, c: usize) -> Result<Mat> {
-    Mat::from_vec(r as i32, c as i32, 1, d)
-}
-
-fn transpose_of(d: &[f64], r: usize, c: usize) -> Mat {
+/// Transpose a row-major `r x c` slice.
+fn transpose_slice(d: &[f64], r: usize, c: usize) -> Vec<f64> {
     let mut o = vec![0.0f64; r * c];
     for i in 0..r {
         for j in 0..c {
             o[j * r + i] = d[i * c + j];
         }
     }
-    Mat::from_vec(c as i32, r as i32, 1, &o).expect("transpose has the same element count")
+    o
+}
+
+fn mat_from(d: &[f64], r: usize, c: usize) -> Result<Mat> {
+    Mat::from_vec(r as i32, c as i32, 1, d)
 }
 
 /// `cv::SVBackSubst(w, u, vt, rhs, dst)`.

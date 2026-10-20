@@ -34,43 +34,6 @@ pub(crate) fn jacobi_dense(a: &mut [f64], n: usize) -> (Vec<f64>, Vec<f64>) {
     jacobi(a, n)
 }
 
-/// The [`svd`] decomposition on raw buffers: returns `(w, u, vt)`.
-///
-/// `u` is `m x k` row-major, `vt` is `k x n` row-major, `w` has `k` entries,
-/// with `k = min(m, n)` — the same thin factorisation [`svd`] produces.
-pub(crate) fn svd_dense(a: &[f64], m: usize, n: usize) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
-    let k = m.min(n);
-    let mut ata = vec![0.0f64; n * n];
-    for i in 0..n {
-        for j in 0..n {
-            let mut s = 0.0;
-            for t in 0..m {
-                s += a[t * n + i] * a[t * n + j];
-            }
-            ata[i * n + j] = s;
-        }
-    }
-    let (vals, vrows) = jacobi(&mut ata, n);
-
-    let mut w = vec![0.0f64; k];
-    let mut vt = vec![0.0f64; k * n];
-    let mut u = vec![0.0f64; m * k];
-    for r in 0..k {
-        let sv = vals[r].max(0.0).sqrt();
-        w[r] = sv;
-        vt[r * n..r * n + n].copy_from_slice(&vrows[r * n..r * n + n]);
-        if sv > 1e-300 {
-            for t in 0..m {
-                let mut s = 0.0;
-                for c in 0..n {
-                    s += a[t * n + c] * vrows[r * n + c];
-                }
-                u[t * k + r] = s / sv;
-            }
-        }
-    }
-    (w, u, vt)
-}
 
 /// Cyclic Jacobi eigen-decomposition of a symmetric matrix, in place.
 ///
@@ -194,22 +157,21 @@ pub struct Svd {
 
 /// `cv::SVD::compute(src, w, u, vt)` — the thin decomposition.
 ///
-/// Computed by eigen-decomposing `A^T A`, which is adequate for the
-/// well-conditioned uses in this workspace (`solve`, `PCA`, homography
-/// fitting) but loses accuracy on the smallest singular values of a badly
-/// conditioned matrix: the condition number is squared. Upstream uses a
-/// Jacobi SVD on `A` directly and does not have that limitation.
+/// One-sided Jacobi on `A` directly, which is what upstream does:
+/// `SVD::compute` dispatches to `JacobiSVD` in `lapack.cpp`.
+///
+/// This used to eigen-decompose `A^T A`, on the grounds that the callers here —
+/// `solve`, `PCA`, homography fitting — are well conditioned enough not to
+/// care. Two of them are; the method is not. Squaring the condition number
+/// loses every singular value below `sqrt(eps) * sigma_max`, and on a matrix
+/// with singular values a decade or two apart down to `1e-9` the shortcut
+/// returned the smallest **108% wrong** where upstream holds it to nine
+/// digits. See `svd_holds_the_small_singular_values_the_shortcut_would_have_lost`.
 pub fn svd<S: MatLike + ?Sized>(src: &S) -> Result<Svd> {
-    let (a, m, n) = dense(src)?;
+    let (_, m, n) = dense(src)?;
     cv_assert!(m > 0 && n > 0, "SVD requires a non-empty matrix");
-    let k = m.min(n);
-    // `u_r = A v_r / sigma_r`, falling back to zero for a null direction.
-    let (w, u, vt) = svd_dense(&a, m, n);
-    Ok(Svd {
-        u: undense(&u, m, k)?,
-        w: undense(&w, k, 1)?,
-        vt: undense(&vt, k, n)?,
-    })
+    let r = crate::linalg2::svd_decomp(src)?;
+    Ok(Svd { u: r.u, w: r.w, vt: r.vt })
 }
 
 /// `cv::SVD::backSubst(w, u, vt, rhs, dst)` — solve using a decomposition in hand.
@@ -408,26 +370,81 @@ impl Pca {
 /// point here rather than upstream's two.
 ///
 /// `max_components` of 0 keeps every axis, as upstream's default does.
+///
+/// Returns `min(samples, dimensions)` axes, as upstream does — `pca.cpp` sets
+/// `count = std::min(len, in_count)`. Three points span at most three
+/// directions however many dimensions they live in.
+///
+/// # Accuracy
+///
+/// Computed from the SVD of the centred data, not from the covariance matrix.
+/// Upstream builds the covariance and eigen-decomposes it, and the numbers
+/// below say why that is worth diverging over: a principal value is a
+/// *variance*, `sigma^2 / n`, so the data's dynamic range enters squared and
+/// the covariance route loses two digits for every one of range.
+///
+/// | `sigma_i / sigma_max` | variance | here | via covariance |
+/// |---|---|---|---|
+/// | `1e0` | `1.6e-2` | exact | `3.4e-16` |
+/// | `1e-4` | `1.6e-10` | `5.0e-16` | `3.6e-9` |
+/// | `1e-6` | `1.6e-14` | `2.5e-12` | `1.2e-5` |
+/// | `1e-9` | `1.5e-20` | `1.2e-10` | `0.59` |
+///
+/// This is not a divergence anyone can observe where cv2 is itself accurate:
+/// `examples/parity_check.rs` compares both the mean and the axes against a
+/// real `cv2 4.13.0` and they still agree to `1e-9`, with the full run
+/// unchanged at 298 exact and 0 mismatches. It shows up only in the range
+/// where cv2's own answer has stopped being right — on a three-sample input,
+/// `cv2.PCACompute2` reports a third eigenvalue of `-1.99e-16`, a negative
+/// variance, where this returns `+4.3e-33`.
+///
+/// Pinned by `pca_resolves_variances_the_covariance_route_would_have_lost`.
 pub fn pca_compute<S: MatLike + ?Sized>(
     data: &S,
     layout: DataLayout,
     max_components: i32,
 ) -> Result<Pca> {
-    let (cov, mean) = calc_covar_matrix(data, layout, true)?;
-    let (vals, vecs) = eigen(&cov)?;
-    let total = vals.rows();
-    let keep = if max_components <= 0 { total } else { max_components.min(total) };
-    let d = vecs.cols();
+    let (v, h, w) = dense(data)?;
+    let (count, dim) = match layout {
+        DataLayout::Rows => (h, w),
+        DataLayout::Cols => (w, h),
+    };
+    cv_assert!(count > 0 && dim > 0, "PCACompute requires a non-empty sample set");
+    let at = |s: usize, d: usize| match layout {
+        DataLayout::Rows => v[s * w + d],
+        DataLayout::Cols => v[d * w + s],
+    };
 
-    let mut ev = Mat::zeros(keep, d, CV_64FC1)?;
-    let mut va = Mat::zeros(keep, 1, CV_64FC1)?;
-    for r in 0..keep {
-        va.pixel_mut::<f64>(r, 0)?[0] = vals.at_f64(r, 0, 0)?;
-        for c in 0..d {
-            ev.pixel_mut::<f64>(r, c)?[0] = vecs.at_f64(r, c, 0)?;
+    let mut mean = vec![0.0f64; dim];
+    for (d, m) in mean.iter_mut().enumerate() {
+        *m = (0..count).map(|s| at(s, d)).sum::<f64>() / count as f64;
+    }
+    // The centred samples, one per row, whichever way they arrived.
+    let mut x = vec![0.0f64; count * dim];
+    for s in 0..count {
+        for d in 0..dim {
+            x[s * dim + d] = at(s, d) - mean[d];
         }
     }
-    Ok(Pca { eigenvectors: ev, eigenvalues: va, mean })
+
+    let (sv, _u, vt) = crate::linalg2::jacobi_svd_dense(&x, count, dim);
+    // `count` samples span at most `count` directions, which is why upstream
+    // caps the count this way rather than at `dim`.
+    let k = count.min(dim);
+    let keep = if max_components <= 0 { k } else { (max_components as usize).min(k) };
+
+    let mut ev = Mat::zeros(keep as i32, dim as i32, CV_64FC1)?;
+    let mut va = Mat::zeros(keep as i32, 1, CV_64FC1)?;
+    for r in 0..keep {
+        // A principal value is a variance, and `calcCovarMatrix` scales by the
+        // sample count rather than by `count - 1`; matching that keeps the
+        // numbers identical to `cv2.PCACompute2`.
+        va.pixel_mut::<f64>(r as i32, 0)?[0] = sv[r] * sv[r] / count as f64;
+        for c in 0..dim {
+            ev.pixel_mut::<f64>(r as i32, c as i32)?[0] = vt[r * dim + c];
+        }
+    }
+    Ok(Pca { eigenvectors: ev, eigenvalues: va, mean: undense(&mean, 1, dim)? })
 }
 
 /// `cv::Mahalanobis(v1, v2, icovar)`.
@@ -694,6 +711,196 @@ mod tests {
     fn eigen_rejects_an_asymmetric_matrix() {
         let a = m(&[1.0, 2.0, 3.0, 4.0], 2, 2);
         assert!(eigen(&a).is_err(), "cv::eigen is documented for symmetric input only");
+    }
+
+    /// `A = U diag(sigma) Vt` with known singular values and *mixed* columns.
+    ///
+    /// The mixing is the point. Without `Vt` the columns of `A` are orthogonal,
+    /// `A^T A` is diagonal, nothing cancels, and eigen-decomposing it is
+    /// perfectly accurate — a test built that way reports no difference between
+    /// the two routes and concludes there is nothing to choose between them.
+    /// The loss needs columns that are nearly parallel with comparable norms,
+    /// so a small singular value is the residue of cancellation between large
+    /// numbers.
+    fn graded(rows: usize, cols: usize, sigma: &[f64]) -> Vec<f64> {
+        let mut seed = 0x2545_F491_4F6C_DD1Du64;
+        let mut rnd = move || {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            (seed >> 11) as f64 / (1u64 << 53) as f64 - 0.5
+        };
+        // Modified Gram-Schmidt, twice: one pass leaves the columns orthogonal
+        // only to about sqrt(eps), which would put more error into `A` than the
+        // effect being measured.
+        let mut ortho = |m: usize, n: usize| {
+            let mut q: Vec<f64> = (0..m * n).map(|_| rnd()).collect();
+            for _ in 0..2 {
+                for j in 0..n {
+                    for k in 0..j {
+                        let d: f64 = (0..m).map(|r| q[r * n + j] * q[r * n + k]).sum();
+                        for r in 0..m {
+                            q[r * n + j] -= d * q[r * n + k];
+                        }
+                    }
+                    let nrm: f64 = (0..m).map(|r| q[r * n + j].powi(2)).sum::<f64>().sqrt();
+                    for r in 0..m {
+                        q[r * n + j] /= nrm;
+                    }
+                }
+            }
+            q
+        };
+        let u = ortho(rows, cols);
+        let v = ortho(cols, cols);
+        let mut a = vec![0.0; rows * cols];
+        for r in 0..rows {
+            for j in 0..cols {
+                a[r * cols + j] =
+                    (0..cols).map(|k| u[r * cols + k] * sigma[k] * v[j * cols + k]).sum();
+            }
+        }
+        a
+    }
+
+    /// What the `A^T A` shortcut would have cost, and what [`svd`] does instead.
+    ///
+    /// The shortcut is recomputed here rather than kept in the library, so the
+    /// comparison stays honest without shipping a second implementation that
+    /// nothing should call.
+    #[test]
+    fn svd_holds_the_small_singular_values_the_shortcut_would_have_lost() {
+        let (rows, cols) = (48usize, 5usize);
+        let want = [1.0, 1e-3, 1e-5, 1e-7, 1e-9];
+        let raw = graded(rows, cols, &want);
+        let a = m(&raw, rows as i32, cols as i32);
+        let got = svd(&a).unwrap();
+
+        // Eigenvalues of `A^T A`, square-rooted. `eigen` is itself accurate, so
+        // what this measures is the cost of forming the product.
+        let mut gram = vec![0.0f64; cols * cols];
+        for p in 0..cols {
+            for q in 0..cols {
+                gram[p * cols + q] =
+                    (0..rows).map(|r| raw[r * cols + p] * raw[r * cols + q]).sum();
+            }
+        }
+        let (vals, _) = eigen(&m(&gram, cols as i32, cols as i32)).unwrap();
+
+        let rel = |x: f64, w: f64| (x - w).abs() / w;
+        eprintln!("{:>10} {:>12} {:>12}", "true", "svd", "A^T A");
+        for (i, w) in want.iter().enumerate() {
+            let shortcut = vals.at_f64(i as i32, 0, 0).unwrap().max(0.0).sqrt();
+            let ours = got.w.at_f64(i as i32, 0, 0).unwrap();
+            eprintln!("{:>10.0e} {:>12.2e} {:>12.2e}", w, rel(ours, *w), rel(shortcut, *w));
+        }
+
+        for (i, w) in want.iter().enumerate() {
+            let e = rel(got.w.at_f64(i as i32, 0, 0).unwrap(), *w);
+            assert!(e < 1e-6, "svd lost sigma {i} ({w:.0e}): relative error {e:.2e}");
+        }
+        // And the shortcut does not, which is why it is not what `svd` uses.
+        let last = vals.at_f64(cols as i32 - 1, 0, 0).unwrap().max(0.0).sqrt();
+        assert!(
+            rel(last, want[cols - 1]) > 1e-2,
+            "the A^T A route was accurate after all ({:.2e}); if that holds up, \
+             `svd` could go back to the cheaper method",
+            rel(last, want[cols - 1])
+        );
+    }
+
+    /// Upstream returns `min(samples, dimensions)` components, not `dimensions`.
+    ///
+    /// `pca.cpp`: `count = std::min(len, in_count)`, and when there are fewer
+    /// samples than dimensions it takes the "scrambled" covariance `AA'`
+    /// instead of `A'A` and back-transforms. With three samples in five
+    /// dimensions, `cv2.PCACompute` returns a `3x5` matrix of axes; anything
+    /// beyond the third is not determined by three points.
+    ///
+    /// Checked against a real `cv2 4.13.0`, which reports eigenvalues
+    /// `[3.890, 0.5027, -1.99e-16]` for the same input — three of them.
+    #[test]
+    fn pca_returns_one_component_per_sample_when_samples_are_scarce() {
+        // Three samples, five dimensions.
+        let data = graded(3, 5, &[1.0, 0.5, 0.25, 0.125, 0.0625]);
+        let mat = m(&data, 3, 5);
+        let pca = pca_compute(&mat, DataLayout::Rows, 0).unwrap();
+        assert_eq!(
+            pca.eigenvectors.rows(),
+            3,
+            "three points span at most three directions; upstream returns \
+             min(samples, dims) = 3, this returned {}",
+            pca.eigenvectors.rows()
+        );
+        assert_eq!(pca.eigenvectors.cols(), 5, "each axis still lives in 5 dimensions");
+        assert_eq!(pca.eigenvalues.rows(), 3);
+    }
+
+    /// PCA resolves small variances, which the covariance route could not.
+    ///
+    /// A principal value is a variance, `sigma^2 / n`, so the data's dynamic
+    /// range enters *squared*. Building the covariance matrix and
+    /// eigen-decomposing it — what upstream does, and what this used to do —
+    /// therefore loses two digits for every one of range: measured, the
+    /// relative error grew as `eps * (sigma_max / sigma_i)^2`, so a component
+    /// six decades down had five good digits and one nine decades down had
+    /// none at all.
+    ///
+    /// Going through the SVD of the centred data removes the squaring. The
+    /// numbers still agree with `cv2.PCACompute2` wherever cv2 is itself
+    /// accurate — checked in `examples/parity_check.rs` — and differ only where
+    /// it is not. On the three-sample case in
+    /// `pca_returns_one_component_per_sample_when_samples_are_scarce`, cv2
+    /// reports a third eigenvalue of `-1.99e-16`: a *negative* variance, which
+    /// is the covariance route's rounding showing through. This returns
+    /// `+4.3e-33`.
+    #[test]
+    fn pca_resolves_variances_the_covariance_route_would_have_lost() {
+        let (rows, cols) = (64usize, 5usize);
+        let sigma = [1.0, 1e-2, 1e-4, 1e-6, 1e-9];
+        // Already centred, so PCA's own centring is a no-op and the spectrum it
+        // sees is the one built here.
+        let mut data = graded(rows, cols, &sigma);
+        for j in 0..cols {
+            let mean: f64 = (0..rows).map(|r| data[r * cols + j]).sum::<f64>() / rows as f64;
+            for r in 0..rows {
+                data[r * cols + j] -= mean;
+            }
+        }
+        let mat = m(&data, rows as i32, cols as i32);
+
+        // The truth, from the same accurate decomposition verified against
+        // known singular values in the test above.
+        let direct = crate::linalg2::svd_decomp(&mat).unwrap();
+        let truth: Vec<f64> = (0..cols)
+            .map(|i| direct.w.at_f64(i as i32, 0, 0).unwrap().powi(2) / rows as f64)
+            .collect();
+
+        // The route this used to take, recomputed here so the comparison stays
+        // honest without shipping an implementation nothing should call.
+        let (cov, _) = calc_covar_matrix(&mat, DataLayout::Rows, true).unwrap();
+        let (old_vals, _) = eigen(&cov).unwrap();
+
+        let pca = pca_compute(&mat, DataLayout::Rows, 0).unwrap();
+        eprintln!("{:>12} {:>14} {:>12} {:>12}", "sigma/sigma0", "variance", "now", "covariance");
+        for (i, t) in truth.iter().enumerate() {
+            let now = (pca.eigenvalues.at_f64(i as i32, 0, 0).unwrap() - t).abs() / t;
+            let was = (old_vals.at_f64(i as i32, 0, 0).unwrap() - t).abs() / t;
+            eprintln!("{:>12.1e} {:>14.4e} {:>12.2e} {:>12.2e}", (t / truth[0]).sqrt(), t, now, was);
+        }
+
+        for (i, t) in truth.iter().enumerate() {
+            let e = (pca.eigenvalues.at_f64(i as i32, 0, 0).unwrap() - t).abs() / t;
+            assert!(e < 1e-9, "component {i} came out with relative error {e:.2e}");
+        }
+        // And the covariance route does not, which is why it is not used.
+        let last = (old_vals.at_f64(cols as i32 - 1, 0, 0).unwrap() - truth[cols - 1]).abs()
+            / truth[cols - 1];
+        assert!(
+            last > 1e-3,
+            "the covariance route resolved the smallest variance after all \
+             ({last:.2e}); if that holds up, PCA could go back to it"
+        );
     }
 
     #[test]

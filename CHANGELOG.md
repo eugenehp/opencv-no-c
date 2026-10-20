@@ -14,7 +14,7 @@ cv2 4.13.0 install.
 - **469 differential comparisons** against cv2: 298 bit-exact, 171 inside a
   tolerance whose cause is documented at the call site, 0 unexplained. That
   covers roughly 169 distinct function families.
-- 1730 tests, clippy clean, `cargo doc` clean.
+- 1733 tests, clippy clean, `cargo doc` clean.
 
 ### Ported from upstream source rather than reconstructed
 
@@ -43,6 +43,26 @@ implemented, selected by depth and channel count.
 - `watershed` used the sum of channel differences rather than the largest, did
   not overwrite the caller's border, and queued seeds once per adjacency
   instead of once per pixel.
+- `SVD::compute`, `invert(DECOMP_SVD)` and `solve(DECOMP_SVD)` eigen-decomposed
+  `A^T A` instead of working on `A`. Upstream dispatches all three to
+  `JacobiSVD` (`lapack.cpp`), and forming the Gram matrix squares the condition
+  number: on a matrix with singular values a decade or two apart down to `1e-9`
+  the smallest came out **108% wrong**. They now share the one-sided Jacobi
+  core already used by `SVDecomp`, which holds every value to nine digits on
+  the same input.
+- `PCACompute` returned one axis per *dimension*. Upstream returns
+  `min(samples, dimensions)` (`pca.cpp`: `count = std::min(len, in_count)`),
+  taking the scrambled covariance when samples are scarce — three points span
+  at most three directions. On a 3x5 input cv2 returns three axes and this
+  returned five.
+- `PCACompute` now works from the SVD of the centred data rather than from the
+  covariance matrix. A principal value is a variance, so the dynamic range
+  enters squared: the covariance route returned the smallest variance of a
+  five-decade spread **59% wrong**, against `1.2e-10` now. This is a deliberate
+  divergence from upstream, which does build the covariance — but it is not
+  observable where cv2 is accurate. The parity run is unchanged at 469
+  comparisons, 298 exact, 0 mismatches; the difference appears only where cv2
+  reports a *negative* variance (`-1.99e-16` on a three-sample input).
 
 ### Known gaps
 

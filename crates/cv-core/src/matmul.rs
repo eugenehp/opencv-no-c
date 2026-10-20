@@ -334,7 +334,7 @@ pub fn invert<M: MatLike + ?Sized>(m: &M, method: Decomp) -> Result<(Mat, bool)>
 /// Returns an `n x m` buffer. `None` when every singular value is below the
 /// threshold, which is the case upstream reports as a zero condition number.
 fn invert_svd(src: &[f64], m: usize, n: usize) -> Option<Vec<f64>> {
-    let (w, u, vt) = crate::linalg::svd_dense(src, m, n);
+    let (w, u, vt) = crate::linalg2::jacobi_svd_dense(src, m, n);
     let nm = m.min(n);
     // Identity right-hand side: column j of the pseudo-inverse is the
     // back-substitution of e_j.
@@ -580,7 +580,7 @@ fn mul_dense(lhs: &[f64], p: usize, q: usize, rhs: &[f64], r: usize) -> Vec<f64>
 /// Least-squares solve through the SVD, dropping singular values below
 /// `2 * DBL_EPSILON * sum(w)` — upstream's `SVBkSb` threshold.
 fn solve_svd(a: &[f64], m: usize, n: usize, b: &[f64], nb: usize) -> Option<Vec<f64>> {
-    let (w, u, vt) = crate::linalg::svd_dense(a, m, n);
+    let (w, u, vt) = crate::linalg2::jacobi_svd_dense(a, m, n);
     let k = m.min(n);
     let threshold = w.iter().sum::<f64>() * (f64::EPSILON * 2.0);
     let mut x = vec![0.0f64; n * nb];
