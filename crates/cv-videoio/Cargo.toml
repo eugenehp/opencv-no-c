@@ -1,5 +1,5 @@
 [package]
-name = "cv-videoio"
+name = "opencv-no-c-videoio"
 description = "cv::videoio for opencv-no-c: AVI, Y4M and image-sequence capture and writing."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-videoio` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_videoio"
 
 [dependencies]
 cv-core.workspace = true

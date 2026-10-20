@@ -1,5 +1,5 @@
 [package]
-name = "cv-photo"
+name = "opencv-no-c-photo"
 description = "cv::photo for opencv-no-c: denoising, inpainting and edge-preserving filters."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-photo` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_photo"
 
 [dependencies]
 cv-core.workspace = true

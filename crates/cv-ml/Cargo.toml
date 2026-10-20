@@ -1,5 +1,5 @@
 [package]
-name = "cv-ml"
+name = "opencv-no-c-ml"
 description = "cv::ml for opencv-no-c: KNN, Bayes, SVM, decision trees, MLP and EM."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-ml` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_ml"
 
 [dependencies]
 cv-core.workspace = true

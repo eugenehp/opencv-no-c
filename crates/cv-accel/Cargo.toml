@@ -1,5 +1,5 @@
 [package]
-name = "cv-accel"
+name = "opencv-no-c-accel"
 description = "Optional RLX-backed acceleration for opencv-no-c. Isolates the only dependency that links C."
 version.workspace = true
 edition.workspace = true
@@ -14,19 +14,28 @@ keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
 
+[lib]
+# Published as `opencv-no-c-accel` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_accel"
+
 [dependencies]
 cv-core.workspace = true
-rlx = { path = "../../../rlx/crates/rlx", features = ["cpu"], optional = true, default-features = false }
+# Pinned exactly: rlx 0.2.18 on crates.io does not build. Its rlx-runtime was
+# published from a later commit than its rlx-ir and imports
+# `rlx_ir::NumberFormat`, which that rlx-ir lacks. A caret requirement would
+# resolve to 0.2.18, so lift the pin only once a coherent release is out.
+rlx = { version = "=0.2.17", features = ["cpu"], optional = true, default-features = false }
 # The `rlx` facade does not forward every backend feature its runtime defines
 # (xdna, opengl, directx, webgpu, qnn). Depending on the runtime directly lets
 # those be switched on; Cargo unifies features across the shared instance, so
 # the facade picks them up.
-rlx-runtime = { path = "../../../rlx/crates/core/rlx-runtime", optional = true, default-features = false }
+rlx-runtime = { version = "=0.2.17", optional = true, default-features = false }
 # ONNX import: lowers a .onnx file to RLX HIR, which `Graph::from_hir` turns
 # into the same compiled graph any other RLX model uses. Optional because it
 # pulls in a protobuf parser that the conv/matmul entry points do not need.
-rlx-onnx-import = { path = "../../../rlx/crates/io/rlx-onnx-import", optional = true, default-features = false }
-rlx-ir = { path = "../../../rlx/crates/core/rlx-ir", optional = true, default-features = false }
+rlx-onnx-import = { version = "=0.2.17", optional = true, default-features = false }
+rlx-ir = { version = "=0.2.17", optional = true, default-features = false }
 
 [features]
 default = []

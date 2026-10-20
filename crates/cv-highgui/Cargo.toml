@@ -1,5 +1,5 @@
 [package]
-name = "cv-highgui"
+name = "opencv-no-c-highgui"
 description = "cv::highgui for opencv-no-c: windows, keys, trackbars and ROI selection, on egui."
 version.workspace = true
 edition.workspace = true
@@ -11,6 +11,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-highgui` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_highgui"
 
 [dependencies]
 cv-core.workspace = true

@@ -1,5 +1,5 @@
 [package]
-name = "cv-flann"
+name = "opencv-no-c-flann"
 description = "cv::flann for opencv-no-c: KD-tree, LSH and linear nearest-neighbour indices."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-flann` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_flann"
 
 [dependencies]
 cv-core.workspace = true

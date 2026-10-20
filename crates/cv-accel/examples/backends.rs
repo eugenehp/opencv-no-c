@@ -1,7 +1,7 @@
 //! Reports which RLX backends this build can reach, and times each on a
 //! realistic `filter2D`-shaped correlation.
 //!
-//! `cargo run --release -p cv-accel --features rlx-all --example backends`
+//! `cargo run --release -p opencv-no-c-accel --features rlx-all --example backends`
 use cv_accel::{available_backends, correlate2d_f32_on, Availability, Backend};
 use std::time::Instant;
 

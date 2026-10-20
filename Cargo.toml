@@ -37,23 +37,23 @@ categories = ["computer-vision", "multimedia::images", "algorithms", "science"]
 readme = "README.md"
 
 [workspace.dependencies]
-cv-accel = { path = "crates/cv-accel", version = "0.1.0" }
-cv-core = { path = "crates/cv-core", version = "0.1.0" }
-cv-highgui = { path = "crates/cv-highgui", version = "0.1.0" }
-cv-video = { path = "crates/cv-video", version = "0.1.0" }
-cv-videoio = { path = "crates/cv-videoio", version = "0.1.0" }
-cv-stitching = { path = "crates/cv-stitching", version = "0.1.0" }
-cv-objdetect = { path = "crates/cv-objdetect", version = "0.1.0" }
-cv-ml = { path = "crates/cv-ml", version = "0.1.0" }
-cv-flann = { path = "crates/cv-flann", version = "0.1.0" }
-cv-photo = { path = "crates/cv-photo", version = "0.1.0" }
-cv-calib3d = { path = "crates/cv-calib3d", version = "0.1.0" }
-cv-dnn = { path = "crates/cv-dnn", version = "0.1.0" }
-cv-features2d = { path = "crates/cv-features2d", version = "0.1.0" }
-cv-gapi = { path = "crates/cv-gapi", version = "0.1.0" }
-cv-imgcodecs = { path = "crates/cv-imgcodecs", version = "0.1.0" }
-cv-imgproc = { path = "crates/cv-imgproc", version = "0.1.0" }
-cv-samples = { path = "crates/cv-samples", version = "0.1.0" }
+cv-accel = { package = "opencv-no-c-accel", path = "crates/cv-accel", version = "0.1.0" }
+cv-core = { package = "opencv-no-c-core", path = "crates/cv-core", version = "0.1.0" }
+cv-highgui = { package = "opencv-no-c-highgui", path = "crates/cv-highgui", version = "0.1.0" }
+cv-video = { package = "opencv-no-c-video", path = "crates/cv-video", version = "0.1.0" }
+cv-videoio = { package = "opencv-no-c-videoio", path = "crates/cv-videoio", version = "0.1.0" }
+cv-stitching = { package = "opencv-no-c-stitching", path = "crates/cv-stitching", version = "0.1.0" }
+cv-objdetect = { package = "opencv-no-c-objdetect", path = "crates/cv-objdetect", version = "0.1.0" }
+cv-ml = { package = "opencv-no-c-ml", path = "crates/cv-ml", version = "0.1.0" }
+cv-flann = { package = "opencv-no-c-flann", path = "crates/cv-flann", version = "0.1.0" }
+cv-photo = { package = "opencv-no-c-photo", path = "crates/cv-photo", version = "0.1.0" }
+cv-calib3d = { package = "opencv-no-c-calib3d", path = "crates/cv-calib3d", version = "0.1.0" }
+cv-dnn = { package = "opencv-no-c-dnn", path = "crates/cv-dnn", version = "0.1.0" }
+cv-features2d = { package = "opencv-no-c-features2d", path = "crates/cv-features2d", version = "0.1.0" }
+cv-gapi = { package = "opencv-no-c-gapi", path = "crates/cv-gapi", version = "0.1.0" }
+cv-imgcodecs = { package = "opencv-no-c-imgcodecs", path = "crates/cv-imgcodecs", version = "0.1.0" }
+cv-imgproc = { package = "opencv-no-c-imgproc", path = "crates/cv-imgproc", version = "0.1.0" }
+cv-samples = { package = "opencv-no-c-samples", path = "crates/cv-samples", version = "0.1.0" }
 
 [workspace.lints.rust]
 missing_debug_implementations = "warn"

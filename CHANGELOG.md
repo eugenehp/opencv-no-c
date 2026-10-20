@@ -7,6 +7,19 @@ Notable changes, newest first. Versions follow [semver](https://semver.org).
 First release. A pure-Rust port of OpenCV 4.15.0-dev, verified against a real
 cv2 4.13.0 install.
 
+### Packaging
+
+- Published as `opencv-no-c` plus one `opencv-no-c-<module>` crate per module
+  (`opencv-no-c-core`, `opencv-no-c-imgproc`, …), because `cv-core` on
+  crates.io belongs to an unrelated project. Library names are unchanged,
+  so code still imports `cv_core`, `cv_imgproc`, and so on.
+- The `opencv-no-c` facade has one feature per OpenCV module, all on by
+  default (`full`). `default-features = false` keeps only `core` plus the
+  modules listed. `dropin` needs `imgproc` and `imgcodecs` and enables them;
+  `gui` enables `highgui`; `onnx` (new in the facade) enables `dnn` and `rlx`.
+- The optional RLX backend depends on RLX from crates.io, pinned to `=0.2.17`.
+  The published 0.2.18 does not build.
+
 ### Coverage
 
 - Every symbol in upstream's binding-visible headers is claimed: **4607/4607**

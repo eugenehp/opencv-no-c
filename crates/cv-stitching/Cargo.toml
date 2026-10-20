@@ -1,5 +1,5 @@
 [package]
-name = "cv-stitching"
+name = "opencv-no-c-stitching"
 description = "cv::stitching for opencv-no-c: warpers, blenders and a panorama pipeline."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-stitching` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_stitching"
 
 [dependencies]
 cv-core.workspace = true

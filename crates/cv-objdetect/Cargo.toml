@@ -1,5 +1,5 @@
 [package]
-name = "cv-objdetect"
+name = "opencv-no-c-objdetect"
 description = "cv::objdetect for opencv-no-c: HOG descriptors, cascade detection and rectangle grouping."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-objdetect` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_objdetect"
 
 [dependencies]
 cv-calib3d.workspace = true

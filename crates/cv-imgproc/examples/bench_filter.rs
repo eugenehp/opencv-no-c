@@ -1,8 +1,8 @@
 //! Times `filter_2d` against `filter_2d_portable` so the value of the `rlx`
 //! feature can be measured rather than assumed.
 //!
-//! `cargo run --release -p cv-imgproc --example bench_filter`
-//! `cargo run --release -p cv-imgproc --features rlx --example bench_filter`
+//! `cargo run --release -p opencv-no-c-imgproc --example bench_filter`
+//! `cargo run --release -p opencv-no-c-imgproc --features rlx --example bench_filter`
 use cv_core::{types::CV_8UC3, BorderType, Mat, MatLikeMut, Point, Size};
 use cv_imgproc::filter::{filter_2d, filter_2d_portable};
 use std::time::Instant;

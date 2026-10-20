@@ -1,5 +1,5 @@
 [package]
-name = "cv-samples"
+name = "opencv-no-c-samples"
 description = "The OpenCV sample programs, ported to opencv-no-c and runnable under wasm32."
 version.workspace = true
 edition.workspace = true
@@ -12,6 +12,7 @@ categories.workspace = true
 readme.workspace = true
 
 [lib]
+name = "cv_samples"
 # `cdylib` so the whole set links as a WebAssembly module; `rlib` so the
 # native runner and the golden test can link it directly.
 crate-type = ["cdylib", "rlib"]

@@ -25,7 +25,7 @@
 //! process, so the whole set builds and runs on `wasm32-unknown-unknown`:
 //!
 //! ```text
-//! cargo build -p cv-samples --target wasm32-unknown-unknown --release
+//! cargo build -p opencv-no-c-samples --target wasm32-unknown-unknown --release
 //! ```
 //!
 //! [`sample_count`], [`sample_name`] and [`sample_run`] are the C-ABI entry

@@ -1,5 +1,5 @@
 [package]
-name = "cv-gapi"
+name = "opencv-no-c-gapi"
 description = "cv::gapi for opencv-no-c: a deferred image-processing graph, compiled once and applied many times."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-gapi` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_gapi"
 
 [dependencies]
 cv-core.workspace = true

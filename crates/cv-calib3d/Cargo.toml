@@ -1,5 +1,5 @@
 [package]
-name = "cv-calib3d"
+name = "opencv-no-c-calib3d"
 description = "cv::calib3d for opencv-no-c: Rodrigues, homography, PnP and projection."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-calib3d` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_calib3d"
 
 [dependencies]
 cv-core.workspace = true

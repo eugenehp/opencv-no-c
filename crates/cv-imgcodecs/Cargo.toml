@@ -1,5 +1,5 @@
 [package]
-name = "cv-imgcodecs"
+name = "opencv-no-c-imgcodecs"
 description = "Pure-Rust port of the OpenCV `imgcodecs` module: image file I/O."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-imgcodecs` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_imgcodecs"
 
 [dependencies]
 cv-core.workspace = true

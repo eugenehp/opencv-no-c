@@ -1,5 +1,5 @@
 [package]
-name = "cv-core"
+name = "opencv-no-c-core"
 description = "Pure-Rust port of the OpenCV `core` module: type system, Mat, arithmetic, statistics."
 version.workspace = true
 edition.workspace = true
@@ -10,6 +10,11 @@ authors.workspace = true
 keywords.workspace = true
 categories.workspace = true
 readme.workspace = true
+
+[lib]
+# Published as `opencv-no-c-core` (`cv-core` on crates.io belongs to another
+# project); the library keeps its short name, so code still says `cv_*`.
+name = "cv_core"
 
 [features]
 default = ["std"]

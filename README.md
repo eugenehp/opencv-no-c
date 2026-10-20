@@ -11,6 +11,15 @@ Verified against a real **cv2 4.13.0** install.
 opencv-no-c = "0.1"
 ```
 
+That is every module. Each OpenCV module is a feature of the same name
+(`imgproc`, `imgcodecs`, `videoio`, `highgui`, `video`, `calib3d`,
+`features2d`, `objdetect`, `dnn`, `ml`, `flann`, `photo`, `stitching`, `gapi`),
+all on by default; `core` is always present. To build only what you use:
+
+```toml
+opencv-no-c = { version = "0.1", default-features = false, features = ["imgproc", "imgcodecs"] }
+```
+
 Rust 1.77+ (for `f64::round_ties_even`, which `cvRound` depends on).
 Apache-2.0, matching upstream.
 
@@ -250,7 +259,7 @@ which `compat` is now most of.
 `wasm32-unknown-unknown`:
 
 ```sh
-cargo build -p cv-samples --target wasm32-unknown-unknown --release
+cargo build -p opencv-no-c-samples --target wasm32-unknown-unknown --release
 ```
 
 The result is a 1.4 MB module with **zero host imports** and three exports
@@ -380,7 +389,7 @@ the 453 tests include exact-value assertions and all still pass.
 | `resize` 1.5× linear c3 | 11.6 ms | 11.6 ms | 1.0× (already tight) |
 
 Reproduce with
-`cargo run --release -p cv-imgproc --example bench_kernels`.
+`cargo run --release -p opencv-no-c-imgproc --example bench_kernels`.
 
 They are still single-threaded and unvectorised, so there is a lot left — but
 the asymptotic waste is gone.
@@ -393,9 +402,14 @@ this project is named for:
 
 ```sh
 cargo build                                  # pure Rust; links libSystem only
-cargo build --features cv-imgproc/rlx        # CPU backend
-cargo build --features cv-imgproc/rlx-all    # every backend
+cargo build --features opencv-no-c-imgproc/rlx        # CPU backend
+cargo build --features opencv-no-c-imgproc/rlx-all    # every backend
 ```
+
+As a dependency, `opencv-no-c = { version = "0.1", features = ["rlx"] }`.
+RLX comes from crates.io, pinned to exactly **0.2.17**: the published 0.2.18
+does not compile (its `rlx-runtime` and `rlx-ir` were cut from different
+commits), and a caret requirement would select it.
 
 Measured with `otool -L`: the default build links **1** library (`libSystem`);
 `rlx-all` links **15** — Accelerate, CoreML, Metal, MetalPerformanceShaders(Graph),
@@ -419,7 +433,7 @@ compile error:
 | `NoDevice` | compiled in, but no working device |
 | `NotCompiled` | feature not enabled |
 
-`cargo run --release -p cv-accel --features rlx-all --example backends` reports
+`cargo run --release -p opencv-no-c-accel --features rlx-all --example backends` reports
 the current machine. On an Apple-silicon Mac:
 
 | backend | feature | status |
@@ -629,7 +643,7 @@ let (idx, dist) = nearest_by_cosine(&query, &descriptors)?;
 
 Cross-checked against **scikit-learn** and **SciPy**: max absolute difference
 `2.2e-16` (one ULP) across 40 descriptor rows, including parallel, opposite and
-zero vectors (`cargo run --release -p cv-core --example cosine_check -- <dir>`).
+zero vectors (`cargo run --release -p opencv-no-c-core --example cosine_check -- <dir>`).
 
 One deliberate divergence from SciPy: a zero-length vector yields similarity
 `0` / distance `1` rather than `NaN`. SciPy returns `NaN`, which silently

@@ -12,34 +12,62 @@ categories.workspace = true
 readme.workspace = true
 
 [dependencies]
+# `core` is not optional: `Mat`, `Result` and the prelude live there.
 cv-core.workspace = true
-cv-calib3d.workspace = true
-cv-photo.workspace = true
-cv-flann.workspace = true
-cv-ml.workspace = true
-cv-objdetect.workspace = true
-cv-stitching.workspace = true
-cv-dnn.workspace = true
-cv-highgui.workspace = true
-cv-video.workspace = true
-cv-videoio.workspace = true
-cv-features2d.workspace = true
-cv-gapi.workspace = true
-cv-imgcodecs.workspace = true
-cv-imgproc.workspace = true
+cv-calib3d = { workspace = true, optional = true }
+cv-dnn = { workspace = true, optional = true }
+cv-features2d = { workspace = true, optional = true }
+cv-flann = { workspace = true, optional = true }
+cv-gapi = { workspace = true, optional = true }
+cv-highgui = { workspace = true, optional = true }
+cv-imgcodecs = { workspace = true, optional = true }
+cv-imgproc = { workspace = true, optional = true }
+cv-ml = { workspace = true, optional = true }
+cv-objdetect = { workspace = true, optional = true }
+cv-photo = { workspace = true, optional = true }
+cv-stitching = { workspace = true, optional = true }
+cv-video = { workspace = true, optional = true }
+cv-videoio = { workspace = true, optional = true }
 
 [features]
-default = []
-# Forwarded to cv-imgproc; see the cv-accel docs for the C-linkage trade-off.
-# Upstream's names, with errors unwinding instead of being returned.
-dropin  = []
+# One feature per OpenCV module, named as upstream names them (its
+# BUILD_opencv_<module> switches). All on by default, so `opencv-no-c = "0.1"`
+# is the whole library; `default-features = false` plus a list keeps only
+# those modules and their dependencies.
+default = ["full"]
+full = [
+    "imgproc", "imgcodecs", "videoio", "highgui", "video", "calib3d",
+    "features2d", "objdetect", "dnn", "ml", "flann", "photo", "stitching", "gapi",
+]
+imgproc    = ["dep:cv-imgproc"]
+imgcodecs  = ["dep:cv-imgcodecs"]
+videoio    = ["dep:cv-videoio"]
+highgui    = ["dep:cv-highgui"]
+video      = ["dep:cv-video"]
+calib3d    = ["dep:cv-calib3d"]
+features2d = ["dep:cv-features2d"]
+objdetect  = ["dep:cv-objdetect"]
+dnn        = ["dep:cv-dnn"]
+ml         = ["dep:cv-ml"]
+flann      = ["dep:cv-flann"]
+photo      = ["dep:cv-photo"]
+stitching  = ["dep:cv-stitching"]
+gapi       = ["dep:cv-gapi"]
+
+# Upstream's names, with errors unwinding instead of being returned. Covers
+# core, imgproc and imgcodecs, so it needs those two modules.
+dropin  = ["imgproc", "imgcodecs"]
 # A C-callable surface over `dropin`. Exporting a C ABI from Rust links no C —
 # it is a calling convention, not a dependency.
 abi     = ["dropin"]
 compat  = ["cv-core/compat"]
-gui     = ["cv-highgui/gui"]
-rlx     = ["cv-imgproc/rlx", "cv-dnn/rlx", "cv-gapi/rlx"]
-rlx-all = ["cv-imgproc/rlx-all", "cv-dnn/rlx", "cv-gapi/rlx"]
+gui     = ["highgui", "cv-highgui/gui"]
+# RLX acceleration; see the cv-accel docs for the C-linkage trade-off. `?`
+# accelerates dnn and gapi only when those modules are enabled.
+rlx     = ["imgproc", "cv-imgproc/rlx", "cv-dnn?/rlx", "cv-gapi?/rlx"]
+rlx-all = ["rlx", "cv-imgproc/rlx-all"]
+# `Net::from_onnx`. Goes through RLX's importer, so it implies `rlx`.
+onnx    = ["dnn", "rlx", "cv-dnn/onnx"]
 
 [lib]
 # `staticlib` and `cdylib` so the `abi` feature produces something a C or C++
@@ -48,3 +76,16 @@ crate-type = ["rlib", "staticlib", "cdylib"]
 
 [lints]
 workspace = true
+
+[[example]]
+name = "parity_check"
+required-features = ["full"]
+
+[[test]]
+name = "pipeline"
+required-features = ["imgproc", "imgcodecs"]
+
+[package.metadata.docs.rs]
+# Not all-features: `rlx-all` and `gui` need native toolchains docs.rs lacks.
+features = ["full", "dropin", "abi", "compat"]
+rustdoc-args = ["--cfg", "docsrs"]

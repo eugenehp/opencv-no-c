@@ -1,6 +1,6 @@
 //! A live Canny demo: two windows, a trackbar driving the threshold.
 //!
-//!     cargo run -p cv-highgui --features gui --example demo
+//!     cargo run -p opencv-no-c-highgui --features gui --example demo
 //!
 //! Move the slider and the edges update; press any key or close the window to
 //! quit. This is the `cv::namedWindow` + `cv::createTrackbar` + `cv::imshow`

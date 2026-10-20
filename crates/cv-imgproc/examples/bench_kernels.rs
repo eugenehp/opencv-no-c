@@ -1,6 +1,6 @@
 //! Broad timing harness for the portable kernels.
 //!
-//! `cargo run --release -p cv-imgproc --example bench_kernels`
+//! `cargo run --release -p opencv-no-c-imgproc --example bench_kernels`
 //!
 //! Reports the median of several runs; single runs are too noisy to compare
 //! against. Throughput is quoted in megapixels per second so numbers stay
